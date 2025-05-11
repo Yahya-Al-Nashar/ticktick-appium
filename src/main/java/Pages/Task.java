@@ -5,11 +5,19 @@ import Interactions.Button;
 import Interactions.Textbox;
 import Utils.MobileEvents;
 import Utils.WaitUtils;
+import com.google.common.collect.ImmutableMap;
 import io.appium.java_client.AppiumBy;
+import io.appium.java_client.android.nativekey.AndroidKey;
+import io.appium.java_client.android.nativekey.KeyEvent;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.remote.RemoteWebElement;
+import org.testng.Assert;
 
 import java.util.Date;
 import java.util.List;
+
+import static Utils.MobileEvents.BackButton;
+import static java.awt.SystemColor.text;
 
 public class Task {
     private static final Textbox EditName = new Textbox(AppiumBy.id("com.ticktick.task:id/edit_text") , "Edit task name");
@@ -28,10 +36,12 @@ public class Task {
 
     public static void EditTaskName(String Name){
         EditName_Button.click();
-        MobileEvents.HideKeyboard();
+
         EditName.ClearText();
         EditName.setText(Name);
+
         MobileEvents.PressEnter();
+        MobileEvents.HideKeyboard();
     }
 
     public static void SetPriority(String Priority){
@@ -55,7 +65,7 @@ public class Task {
     }
 
     public static void RemoveTag(String TagName) throws InterruptedException {
-        WebElement Tag = WebDriverFactory.getDriver().findElement(AppiumBy.androidUIAutomator("new UiSelector().text(\""+TagName+"\").instance(1)"));
+        WebElement Tag = WebDriverFactory.getDriver().findElement(AppiumBy.androidUIAutomator("new UiSelector().text(\""+TagName+"\")"));
         if(Tag.isEnabled()){
             Tag.click();
             WaitUtils.waitForElementToBeVisible(WebDriverFactory.getDriver(),AppiumBy.androidUIAutomator("new UiSelector().text(\""+TagName+"\")"));
@@ -79,7 +89,7 @@ public class Task {
         MobileEvents.HideKeyboard();
     }
     public static void Exit_Task(){
-        MobileEvents.BackButton();
+        BackButton();
     }
 
     public static void Add_Descrioption(String Desc){
@@ -97,6 +107,47 @@ public class Task {
     }
     public static void SetNameAndDate(String Name , String Date){
         EditTaskName(Name+" @"+Date);
+    }
+
+
+
+    public static void assertPriorityIsChecked(String priorityToCheck)
+    {
+        WebDriverFactory.getDriver().executeScript("mobile: clickGesture", ImmutableMap.of("x", 1350, "y" , 325));
+
+        // Store the list of priorities
+        List<WebElement> priorities = WebDriverFactory.getDriver()
+                .findElements(AppiumBy.className("android.widget.LinearLayout"));
+
+        Boolean flag = false;
+
+        // Loop through all priorities
+        for (WebElement priority : priorities)
+        {
+            // Get the title of the priority
+            WebElement title = priority.findElement(AppiumBy.id("com.ticktick.task:id/tv_title"));
+
+            // Get the type of the priority
+            String text = title.getText();
+
+            // Check if this priority is checked
+            boolean check = !priority
+                    .findElements(AppiumBy.id("com.ticktick.task:id/iv_checked"))
+                    .isEmpty();
+
+            // Check if this is the right one
+            if (text.equals(priorityToCheck) && check)
+            {
+                //Assert.assertEquals(priorityToCheck, text);
+                System.out.println("Expected " + priorityToCheck + " is checked");
+                flag = true;
+            }
+        }
+        if(!flag)
+        {
+            throw new AssertionError("Expected " + priorityToCheck + " , but it was not");
+        }
+        MobileEvents.BackButton();
     }
 
 
